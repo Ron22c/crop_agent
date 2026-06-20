@@ -594,7 +594,6 @@ pytest tests/test_tools.py -v   # specific file
 | Target | How |
 |--------|-----|
 | **Any VM** | `scp` repo + `.env`, run `./up.sh` |
-| **Walmart AI Innovation Lab** | Onboard at [wmlink.wal-mart.com/onboard](https://wmlink.wal-mart.com/onboard), then: `@launchpad deploy agent-service`. Set secrets in Launchpad UI. |
 | **WCNP / Kubernetes** | Use **wcnp-t12r-agent**: _"Generate KITT file for FastAPI on port 8000"_. Repeat for each MCP server. |
 
 **Liveness probes:** `GET /health` on all three services (agent, db-mcp, vector-mcp).
