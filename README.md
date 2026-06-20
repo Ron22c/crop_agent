@@ -64,8 +64,6 @@ cp .env.example .env   # edit LM_STUDIO_MODEL to match your loaded model
 docker compose up -d
 ```
 
-> **Behind Walmart VPN?** Docker Hub may be blocked. Set the proxy first:
-> Docker Desktop → Settings → Proxies → `http://sysproxy.wal-mart.com:8080`
 
 ### 3. Verify it's alive
 
@@ -308,7 +306,6 @@ LM_STUDIO_MODEL=qwen/qwen3-coder-30b pytest -q
 | Target | How |
 |--------|-----|
 | **Any VM** | Copy repo + `.env.production`, run `docker compose up -d` |
-| **Walmart AI Innovation Lab** | Onboard at https://wmlink.wal-mart.com/onboard, then use the `launchpad` sub-agent |
 | **WCNP / Kubernetes** | Use `wcnp-t12r-agent`: "Generate KITT file for Python FastAPI service named agent-service on port 8000" |
 
 Health / readiness: `GET /health` on agent + every MCP server.  
