@@ -306,7 +306,6 @@ LM_STUDIO_MODEL=qwen/qwen3-coder-30b pytest -q
 | Target | How |
 |--------|-----|
 | **Any VM** | Copy repo + `.env.production`, run `docker compose up -d` |
-| **WCNP / Kubernetes** | Use `wcnp-t12r-agent`: "Generate KITT file for Python FastAPI service named agent-service on port 8000" |
 
 Health / readiness: `GET /health` on agent + every MCP server.  
 Tool discovery sanity check: `GET /tools` — should list all MCP-exposed tools. If only `translate_output` shows, `MCP_SERVER_URLS` is wrong or the MCP servers aren't reachable.
