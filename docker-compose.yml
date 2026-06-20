@@ -1,0 +1,71 @@
+services:
+
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: agent-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cropcompass
+      POSTGRES_USER: cropcompass
+      POSTGRES_PASSWORD: cropcompass_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      # Auto-loaded by Postgres on first boot, in alphabetical order.
+      - ./db/cropcompass_dump.sql:/docker-entrypoint-initdb.d/01_dump.sql:ro
+      - ./mcp_servers/vector_server/schema.sql:/docker-entrypoint-initdb.d/02_vector.sql:ro
+      - ./db/conversations.sql:/docker-entrypoint-initdb.d/03_conversations.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cropcompass -d cropcompass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  db-mcp:
+    build: { context: ., dockerfile: mcp_servers/Dockerfile }
+    container_name: agent-db-mcp
+    restart: unless-stopped
+    command: uvicorn mcp_servers.db_server.server:app --host 0.0.0.0 --port 9101
+    environment:
+      DATABASE_URL: postgresql://cropcompass:cropcompass_secret@db:5432/cropcompass
+    ports: ["9101:9101"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  vector-mcp:
+    build: { context: ., dockerfile: mcp_servers/Dockerfile }
+    container_name: agent-vector-mcp
+    restart: unless-stopped
+    command: uvicorn mcp_servers.vector_server.server:app --host 0.0.0.0 --port 9102
+    environment:
+      DATABASE_URL: postgresql://cropcompass:cropcompass_secret@db:5432/cropcompass
+      EMBEDDING_MODEL: sentence-transformers/all-MiniLM-L6-v2
+    ports: ["9102:9102"]
+    depends_on:
+      db: { condition: service_healthy }
+
+  agent:
+    build: { context: ., dockerfile: Dockerfile }
+    container_name: agent-service
+    restart: unless-stopped
+    command: uvicorn agent_service.main:app --host 0.0.0.0 --port 8000
+    environment:
+      LLM_BACKEND:           ${LLM_BACKEND:-lm_studio}
+      ANTHROPIC_API_KEY:     ${ANTHROPIC_API_KEY:-}
+      # LM Studio runs on the host machine — host.docker.internal reaches it from inside the container.
+      # 127.0.0.1 is correct only for local (non-Docker) runs; do NOT change this line.
+      LM_STUDIO_BASE_URL:    http://host.docker.internal:1234
+      LM_STUDIO_MODEL:       ${LM_STUDIO_MODEL:-local-model}
+      HF_API_KEY:            ${HF_API_KEY:-}
+      MCP_SERVER_URLS:       http://db-mcp:9101,http://vector-mcp:9102
+      SESSION_BACKEND:       ${SESSION_BACKEND:-postgres}
+      DATABASE_URL:          postgresql://cropcompass:cropcompass_secret@db:5432/cropcompass
+      ALLOWED_ORIGINS:       "*"
+    ports: ["8000:8000"]
+    depends_on:
+      db-mcp:     { condition: service_started }
+      vector-mcp: { condition: service_started }
+
+volumes:
+  pg_data:
